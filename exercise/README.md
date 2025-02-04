@@ -6,24 +6,24 @@
 
 **Objectives:**
 
-  - ✅ Understand the core concepts of Apache Airflow: DAGs, Operators, Tasks, and the Airflow UI.
-  - ✅ Grasp the importance of data pipelines in automating data workflows.
-  - ✅ Design a simple yet functional data pipeline using Airflow DAGs.
-  - ✅ Implement a data pipeline that extracts, transforms, and loads data (ETL).
-  - ✅ Use `PythonOperators` to define and execute Python functions as tasks in Airflow.
-  - ✅ Effectively use SQLite as both a data source and destination within an Airflow pipeline, including connection setup.
-  - ✅ Monitor, manage, and troubleshoot workflows using the Airflow UI.
-  - ✅ Understand basic error handling and data validation concepts within the context of a data pipeline.
+-   ✅ Understand the core concepts of Apache Airflow: DAGs, Operators, Tasks, and the Airflow UI.
+-   ✅ Grasp the importance of data pipelines in automating data workflows.
+-   ✅ Design a simple yet functional data pipeline using Airflow DAGs.
+-   ✅ Implement a data pipeline that extracts, transforms, and loads data (ETL).
+-   ✅ Use `PythonOperators` to define and execute Python functions as tasks in Airflow.
+-   ✅ Effectively use SQLite as both a data source and destination within an Airflow pipeline, including connection setup.
+-   ✅ Monitor, manage, and troubleshoot workflows using the Airflow UI.
+-   ✅ Understand basic error handling and data validation concepts within the context of a data pipeline.
 
 **Prerequisites:**
 
-  - Basic understanding of Python programming (especially Python 3.11, including concepts like functions, data structures, and error handling).
-  - Familiarity with SQL concepts (creating tables, inserting data, querying data).
-  - Access to the provided workspace with:
-      - Python 3.11.9 pre-installed.
-      - Apache Airflow (version 2.6 or later) pre-installed and configured to run in standalone mode.
-      - Necessary Python libraries (pandas, sqlite3, etc.) pre-installed.
-  - Basic understanding of command-line interfaces (navigating directories, running commands).
+-   Basic understanding of Python programming (especially Python 3.11, including concepts like functions, data structures, and error handling).
+-   Familiarity with SQL concepts (creating tables, inserting data, querying data).
+-   Access to the provided workspace with:
+    -   Python 3.11.9 pre-installed.
+    -   Apache Airflow (version 2.6 or later) pre-installed and configured to run in standalone mode.
+    -   Necessary Python libraries (pandas, sqlite3, etc.) pre-installed.
+-   Basic understanding of command-line interfaces (navigating directories, running commands).
 
 **Lab Scenario:**
 
@@ -43,54 +43,62 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
 1.  **Access the Workspace:**
     *   Access the AWS Workspace.
 
-2.  **Verify Python Version:**
+2. **Make Python and pip 3.11 version default**
     *   Open a terminal (or command prompt) in the workspace and run:
 
         ```bash
+        echo "alias python='python3.11' && alias pip='python3.11 -m pip'" >> ~/.bashrc && source ~/.bashrc
+        ```
+
+2.1  **Verify Python Version:**
+    *   Ensure that the output shows Python 3.11.9:
+
+        ```bash
         python --version
+        pip --version
         ```
 
-    *   Ensure that the output shows Python 3.11.9.
-
-3.  **Set Up a Virtual Environment (Recommended):**
-
-    *   Create a virtual environment to isolate project dependencies:
+3.1  **Update sqlite:**
+    *   Unfortunately AWS Workspace is including a very old version which we need to install running the following script:
 
         ```bash
-        python3 -m venv airflow_env
+        cd ~/ && \
+        wget https://www.sqlite.org/2024/sqlite-autoconf-3450000.tar.gz && \
+        tar xzf sqlite-autoconf-3450000.tar.gz && \
+        cd sqlite-autoconf-3450000 && \
+        ./configure && \
+        make && \
+        sudo make install && \
+        echo 'export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"' >> ~/.bashrc && \
+        source ~/.bashrc
+        sudo ldconfig /usr/local/lib
         ```
 
-    *   Activate the virtual environment:
+3.2  **Install Apache Airflow and pandas:**
+    *   Install Airflow version 2.10.4 with the SQLite provider, pandas, and the correct constraints for Python 3.11 (It will take about 2 minutes):
 
         ```bash
-        source airflow_env/bin/activate
+        pip install pandas "apache-airflow[sqlite]==2.10.4" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.4/constraints-3.11.txt"
         ```
 
-4.  **Install Apache Airflow:**
-
-    *   Install Airflow version 2.10.4 with the SQLite provider and the correct constraints for Python 3.11:
-
-        ```bash
-        pip install "apache-airflow[sqlite]==2.10.4" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.4/constraints-3.11.txt"
-        ```
     *   **Explanation:**
         -   We use `pip` to install Airflow from the Python Package Index (PyPI).
         -   `"apache-airflow[sqlite]==2.10.4"` specifies the Airflow package with the `sqlite` extra, which installs dependencies needed to work with SQLite databases. We are explicitly installing version 2.10.4.
         -   `--constraint` ensures that compatible versions of all dependencies are installed, avoiding potential conflicts.
 
-5.  **Initialize the Airflow Database:**
+4.  **Initialize the Airflow Database:**
 
     ```bash
     airflow db init
     ```
 
-6.  **Create an Airflow User:**
+5.  **Create an Airflow User:**
 
     ```bash
     airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com
     ```
 
-7.  **Start Airflow:**
+6.  **Start Airflow:**
 
     *   In the terminal, start Airflow in standalone mode:
 
@@ -110,12 +118,12 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
     ...
     ```
 
-8.  **Access Airflow UI:**
+7.  **Access Airflow UI:**
 
     *   Open a web browser and go to `http://localhost:8080`.
     *   Log in using the credentials provided by `airflow users create`.
 
-9.  **Airflow UI Overview:**
+8.  **Airflow UI Overview:**
 
     *   **DAGs View:**
         *   This is the main view where all defined DAGs are listed.
@@ -138,25 +146,19 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
 
 1.  **Create a Database Directory and File:**
 
-    *   Set an environment variable for the data directory path:
-
-        ```bash
-        export DATA_DIR=/home/$(whoami)/data
-        ```
-
+    *   **Important:** Open a different terminal where you started Airflow.
+    
     *   Create a new directory called `data` in your home directory:
 
         ```bash
-        mkdir -p $DATA_DIR
+        mkdir data
         ```
 
-    *   Inside the `data` directory, create a new SQLite database file named `demo.db`:
+    *   Inside the `data` directory, create an empty `demo.db` file:
 
         ```bash
-        sqlite3 $DATA_DIR/demo.db
+        touch ./data/demo.db
         ```
-
-    *   This will open the `sqlite3` interactive shell. You can exit the shell by typing `.exit`.
 
 2.  **Configure SQLite Connection in Airflow:**
 
@@ -165,7 +167,7 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
     *   Fill in the following details:
         *   **Conn Id:** `my_sqlite_conn`
         *   **Conn Type:** `Sqlite`
-        *   **Host:** `$DATA_DIR/demo.db`
+        *   **Host:** `/home/du_XXXXXX-YYYYYYYYYY/data/demo.db` (In the second terminal, run pwd your du_XXXXXX-YYYYYYYYYY folder name)
         *   **Schema:** (Leave this blank for SQLite)
     *   Leave other fields blank or at their default values.
     *   Click `Save`.
@@ -197,9 +199,10 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
         *   Calculates a `discounted_price` column.
         *   Saves the transformed data to `transformed_data.csv`.
     *   **load_data:**
-        *   Establishes a connection to the `demo.db` SQLite database.
+        *   Retrieves the value of the `database_name` variable defined in Airflow.
+        *   Establishes a connection to the `demo.db` SQLite database (or the database specified by the variable) within the directory defined by the `data_dir` Airflow variable.
         *   Reads the `transformed_data.csv` file into a DataFrame.
-        *   Uses the `to_sql()` method to load the DataFrame into the `products` table
+        *   Uses the `to_sql()` method to load the DataFrame into the `products` table.
         *   Closes the database connection.
     *   **validate_data:**
         *   Connects to the SQLite database.
@@ -210,8 +213,15 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
 
 1.  **Create the DAG File:**
 
-    *   In the workspace, navigate to the `~/airflow` directory using the terminal, and create the dags folder using `mkdir dags`.
-    *   Navigate into it with `cd dags` and create a new Python file named `etl_pipeline.py`. This is where you'll write the code for your DAG.
+    *   In the same workspace terminal where you created the demo.db file, navigate to the /airflow directory with `cd ~/airflow`, and create the dags folder using `mkdir dags`.
+    *   Navigate into it with `cd dags`.
+    *   Open Visual Studio Code:
+
+        ```bash
+        code .
+        ```
+
+    *   Once it opens, create a new file inside the dags folder by right-clicking on it and selecting New File, save it as `etl_pipeline.py`. This is where you'll write the code for your DAG.
 
 2.  **Import Necessary Modules:**
 
@@ -219,7 +229,7 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
     from airflow import DAG
     from airflow.operators.python import PythonOperator
     from airflow.providers.sqlite.operators.sqlite import SqliteOperator
-    from airflow.operators.bash import BashOperator
+    from airflow.models import Variable
     from datetime import datetime
     import pandas as pd
     import sqlite3
@@ -230,13 +240,10 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
 
     ```python
     default_args = {
-        'owner': 'airflow',
-        'start_date': datetime(2023, 1, 1),
-        'retries': 0,  # Keep it simple for the lab
+    'owner': 'airflow',
+    'start_date': datetime(2023, 1, 1),
+    'retries': 0,  # Keep it simple for the lab
     }
-    
-    # Use an environment variable for the data directory
-    DATA_DIR = os.getenv('DATA_DIR', '/home/$(whoami)/data')  # Default if not set
     ```
 
 4.  **Create the DAG Instance:**
@@ -250,39 +257,66 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
     ) as dag:
     ```
 
-5.  **Define the `extract_data` Task:**
-
-    ```python
-        def extract_data_func():
-            """Simulates extracting data from a CSV. Creates sample data."""
-            data = {'product_id': [1, 2, 3, 4],
-                    'name': ['Product A', 'Product B', None, 'Product D'],
-                    'price': [10, 20, 15, 25]}
-            df = pd.DataFrame(data)
-            extracted_data_path = f"{DATA_DIR}/extracted_data.csv"
-            df.to_csv(extracted_data_path, index=False)
-            print(f"Data extracted to {extracted_data_path}")
-
-        extract_task = PythonOperator(
-            task_id='extract_data',
-            python_callable=extract_data_func,
-        )
+5. **Add DATA_DIR Variable at the Top:**
+    ```python:etl_pipeline.py
+    # Get data_dir from Airflow variables at the top level
+    DATA_DIR = Variable.get("data_dir")
     ```
 
-6.  **Define the `transform_data` Task:**
+6. **Update the Extract Task:**
+    ```python:etl_pipeline.py
+    def extract_data_func(**kwargs):
+        """Simulates extracting data from a CSV or uses sample data based on configuration."""
+        product_data_source = Variable.get("product_data_source")
+
+        try:
+            if product_data_source == "sample_data":
+                data = {'product_id': [1, 2, 3, 4],
+                        'name': ['Product A', 'Product B', None, 'Product D'],
+                        'price': [10, 20, 15, 25]}
+                df = pd.DataFrame(data)
+                extracted_data_path = f"{DATA_DIR}/extracted_data.csv"
+                
+                # Create directory if it does not exist
+                os.makedirs(os.path.dirname(extracted_data_path), exist_ok=True)
+
+                df.to_csv(extracted_data_path, index=False)
+                print(f"Sample data extracted to {extracted_data_path}")
+            else:
+                raise NotImplementedError(f"Data source '{product_data_source}' not yet implemented.")
+            return extracted_data_path
+        except Exception as e:
+            print(f"Error during data extraction: {e}")
+            raise
+    ```
+
+7. **Define the `transform_data` Task with Error Handling:**
 
     ```python
-        def transform_data_func():
+        def transform_data_func(ti, **kwargs):
             """Transforms the extracted data."""
-            extracted_data_path = f"{DATA_DIR}/extracted_data.csv"
+            extracted_data_path = ti.xcom_pull(task_ids='extract_data')
             transformed_data_path = f"{DATA_DIR}/transformed_data.csv"
-            df = pd.read_csv(extracted_data_path)
-            # Handle missing values (fill with a default value)
-            df['name'].fillna('Unknown Product', inplace=True)
-            # Add a new column: 'discounted_price'
-            df['discounted_price'] = df['price'] * 0.9
-            df.to_csv(transformed_data_path, index=False)
-            print(f"Data transformed and saved to {transformed_data_path}")
+
+            try:
+                if not os.path.exists(extracted_data_path):
+                    raise FileNotFoundError(f"Extracted data file not found: {extracted_data_path}")
+
+                df = pd.read_csv(extracted_data_path)
+                # Handle missing values (fill with a default value)
+                df['name'].fillna('Unknown Product', inplace=True)
+                # Add a new column: 'discounted_price'
+                df['discounted_price'] = df['price'] * 0.9
+                df.to_csv(transformed_data_path, index=False)
+                print(f"Data transformed and saved to {transformed_data_path}")
+                return transformed_data_path
+            except FileNotFoundError as fnfe:
+                print(fnfe)
+                raise
+            except Exception as e:
+                print(f"Error during data transformation: {e}")
+                raise
+    
 
         transform_task = PythonOperator(
             task_id='transform_data',
@@ -290,18 +324,31 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
         )
     ```
 
-7.  **Define the `load_data` Task:**
+8. **Define the `load_data` Task with Error Handling:**
 
     ```python
-        def load_data_func():
+        def load_data_func(ti, **kwargs):
             """Loads the transformed data into SQLite."""
-            db_path = f"{DATA_DIR}/demo.db"
-            transformed_data_path = f"{DATA_DIR}/transformed_data.csv"
-            conn = sqlite3.connect(db_path)
-            df = pd.read_csv(transformed_data_path)
-            df.to_sql('products', conn, if_exists='replace', index=False)
-            conn.close()
-            print(f"Data loaded into 'products' table in {db_path}")
+            transformed_data_path = ti.xcom_pull(task_ids='transform_data')
+            db_name = Variable.get("database_name")
+            db_path = f"{DATA_DIR}/{db_name}"
+            
+            try:
+                if not os.path.exists(transformed_data_path):
+                    raise FileNotFoundError(f"Transformed data file not found: {transformed_data_path}")
+                conn = sqlite3.connect(db_path)
+                df = pd.read_csv(transformed_data_path)
+                df.to_sql('products', conn, if_exists='replace', index=False)
+                conn.close()
+                print(f"Data loaded into 'products' table in {db_path}")
+
+            except FileNotFoundError as fnfe:
+                print(fnfe)
+                raise
+            except Exception as e:
+                print(f"Error during data loading: {e}")
+                raise
+    
 
         load_task = PythonOperator(
             task_id='load_data',
@@ -309,12 +356,11 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
         )
     ```
 
-8. **Define the `validate_data` task:**
+9. **Define the `validate_data` task:**
 
     ```python
         validate_task = SqliteOperator(
             task_id='validate_data',
-            ```python
             sqlite_conn_id='my_sqlite_conn',
             sql="""
                 SELECT COUNT(*) FROM products;
@@ -322,21 +368,36 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
         )
     ```
 
-9.  **Set Task Dependencies:**
+10. **Set Task Dependencies:**
 
     ```python
         extract_task >> transform_task >> load_task >> validate_task
     ```
 
-**Part 5: Run and Monitor the Pipeline (15 minutes)**
+**Part 5: Parameterize the DAG (15 minutes)**
+
+1.  **Create Airflow Variables:**
+
+    *   Go to `Admin` > `Variables` in the Airflow UI.
+    *   Create these variables:
+        *   **Key:** `product_data_source` **Val:** `sample_data`
+        *   **Key:** `database_name` **Val:** `demo.db`
+        *   **Key:** `data_dir` **Val:** `/home/du_XXXXXX-YYYYYYYYYY/data`
+
+2.  **Important Note About Variables:**
+    *   The code now uses a global `DATA_DIR` variable that's set at DAG load time
+    *   All file paths are constructed using this `DATA_DIR` variable
+    *   The database connection uses the combination of `data_dir` and `database_name` variables
+
+**Part 6: Run and Monitor the Pipeline (15 minutes)**
 
 1.  **Save the DAG File:**
-    *   Make sure you have saved the `etl_pipeline.py` file in the `~/airflow/dags` directory. Airflow automatically scans this directory for new DAG files.
+    *   Make sure you have saved the updated `etl_pipeline.py` file in the `~/airflow/dags` directory.
 
 2.  **Unpause and Trigger the DAG:**
     *   Go back to the Airflow UI in your web browser.
-    *   You should see the `etl_pipeline` DAG in the list of DAGs. It might be paused by default (indicated by a grayed-out toggle switch).
-    *   Click the toggle switch to unpause (turn on) the DAG.
+    *   Go to the DAGs tab.
+    *   Click the toggle switch to unpause (turn on) the `etl_pipeline` DAG if it's paused.
     *   Click on the `etl_pipeline` DAG's name to go to its details page (the Graph View).
     *   Click the "Trigger DAG" button (it looks like a play button) in the top right corner.
     *   A small popup might appear asking for confirmation; click "Trigger".
@@ -359,11 +420,12 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
 
     *   Click on a task instance (a colored square in either the Graph View or Tree View).
     *   Go to the "Logs" tab to see the output generated by the task.
-    *   **Important:** Pay close attention to the logs, especially if a task fails. The logs will usually contain error messages that will help you debug the problem.
+    *   **Important:** Pay close attention to the logs to understand what is happening in each step.
 
 5.  **Verify Results:**
 
     *   Once the DAG run is successful (all tasks are dark green), use an SQLite browser (or the `sqlite3` command-line tool) to connect to the `demo.db` database:
+        *   **Important:** Use the same terminal where you started airflow and navigated to `~/airflow/dags`.
         ```bash
         sqlite3 $DATA_DIR/demo.db
         ```
@@ -377,45 +439,7 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
     *   Exit the `sqlite3` shell by typing `.exit`.
     *   Go to the task logs for `validate_data` and check the output. You should see the number of rows that were added.
 
-**Part 6: Troubleshooting (If Needed)**
-
-*   **Common Issues:**
-    *   **Incorrect File Paths:** Double-check that the file paths in your Python functions (for reading and writing CSV files and connecting to the database) are correct and use the `$DATA_DIR` environment variable.
-    *   **Connection Errors:** Make sure the SQLite connection (`my_sqlite_conn`) is configured correctly in the Airflow UI, especially the "Host" field (which should be `$DATA_DIR/demo.db`).
-    *   **Missing Libraries:** Ensure that the required Python libraries (pandas, sqlite3) are installed in your Airflow environment. If you're using a virtual environment, make sure it's activated.
-    *   **Syntax Errors:** Carefully review your Python code for any syntax errors.
-    *   **DAG Not Showing Up:** If your DAG doesn't appear in the Airflow UI, make sure the `etl_pipeline.py` file is saved in the correct directory (`~/airflow/dags`) and that Airflow has refreshed its list of DAGs (it might take a few seconds). You may also need to restart airflow using `airflow standalone`.
-    *   **Permissions Errors:** If you encounter permission errors when trying to create or access files, make sure your user has the necessary permissions in the `$DATA_DIR` directory.
-
-*   **Debugging Tips:**
-    *   **Use `print()` Statements:** Add `print()` statements to your Python functions to output intermediate values and debug the logic. The output will appear in the task logs.
-    *   **Check Task Logs:** The task logs are your primary source of information for debugging. Look for error messages, stack traces, and any output from your `print()` statements.
-    *   **Test Functions Independently:** Before integrating your Python functions into the Airflow DAG, test them independently in a Python interpreter or a separate script to make sure they work as expected.
-    *   **Isolate the Problem:** If a task fails, try to isolate the problem by commenting out parts of the code or adding `print()` statements to narrow down the source of the error.
-
-**Part 7: Enhancements and Further Learning (If Time Permits)**
-
-*   **Add Error Handling:**
-    *   Modify the Python functions to include more robust error handling using `try-except` blocks. For example:
-        *   Handle potential `FileNotFoundError` when reading CSV files.
-        *   Handle potential `sqlite3.OperationalError` (e.g., if the database table doesn't exist).
-        *   Raise custom exceptions to indicate specific error conditions.
-
-*   **Parameterize the DAG:**
-
-    *   Use Airflow Variables or Jinja templating to make the file paths or other parameters configurable instead of hardcoding them.
-    *   **Airflow Variables:**
-        *   Go to `Admin` > `Variables` in the Airflow UI.
-        *   Create variables like `extract_file_path`, `transform_file_path`, and `db_file_path`.
-        *   Access these variables in your DAG code using `Variable.get("variable_name")`.
-    *   **Jinja Templating:**
-        *   Use Jinja templating within your Python strings to make them dynamic. For example:
-
-            ```python
-            file_path = "{{ var.value.extract_file_path }}"
-            ```
-
-        *   This allows you to pass values to the template when triggering the DAG.
+**Part 7: Further Learning**
 
 *   **Add a Data Validation Step:**
     *   Create a new task (e.g., `validate_data_quality`) that performs data validation checks on the transformed data *before* loading it into the database.
@@ -426,7 +450,7 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
         *   **Check for duplicates:** Make sure there are no duplicate rows based on a primary key.
 
 *   **Use XComs for Inter-Task Communication:**
-    *   Use XComs (cross-communication) to pass data between tasks instead of writing to intermediate files.
+    *   Use XComs (cross-communication) to pass more complex data between tasks instead of writing to intermediate files. You already have some examples in the code.
 
 *   **Explore Different Operators:**
     *   Experiment with other Airflow operators like `BashOperator` (to run shell commands), `EmailOperator` (to send notifications), or operators for interacting with cloud services (e.g., `S3Hook`, `BigQueryHook`).
@@ -442,6 +466,7 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
     *   Using SQLite as a data source and destination.
     *   The Airflow UI for monitoring and managing workflows.
     *   Error handling and data validation.
+    *   Parameterizing DAGs with Airflow Variables.
     *   The importance of installing Airflow with constraints using pip.
 
 *   **Importance of Data Pipelines:**
