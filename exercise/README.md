@@ -180,7 +180,7 @@ We'll build a data pipeline that simulates a realistic, albeit simplified, ETL (
     *   Explain the ETL process (Extract, Transform, Load) and how it relates to the DAG we're building.
     *   Discuss the three main tasks of our pipeline: `extract_data`, `transform_data`, and `load_data`, plus the `validate_data` task.
 
-    Here's a Mermaid diagram of our ETL pipeline:
+    Here's a diagram of our ETL pipeline:
 
     ```mermaid
     graph LR
