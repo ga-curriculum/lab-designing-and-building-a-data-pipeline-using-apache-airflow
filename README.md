@@ -26,11 +26,11 @@ Estimated time to complete core lab exercise: **tktk min**
 
 tktk If there is not a starter code repo that students will fork and clone to start this lab, then this section and all of its content should be removed.
 
-🟢 [Starter code](https://git.generalassemb.ly/modular-curriculum-all-courses/tktk)
+🟢 [Starter code](https://github.com/ga-curriculum/tktk)
 
 ### Solution code
 
-🏁 [Solution code](https://git.generalassemb.ly/modular-curriculum-all-courses/tktk)
+🏁 [Solution code](https://github.com/ga-curriculum/tktk)
 
 ### Deployed sites
 
